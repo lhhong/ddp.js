@@ -25,7 +25,7 @@ export default class DDP extends EventEmitter {
         super();
 
         this.status = "disconnected";
-
+        this.session = "";
         // Default `autoConnect` and `autoReconnect` to true
         this.autoConnect = (options.autoConnect !== false);
         this.autoReconnect = (options.autoReconnect !== false);
@@ -54,6 +54,7 @@ export default class DDP extends EventEmitter {
 
         this.socket.on("close", () => {
             this.status = "disconnected";
+            this.session = "";
             this.messageQueue.empty();
             this.emit("disconnected");
             if (this.autoReconnect) {
@@ -68,8 +69,11 @@ export default class DDP extends EventEmitter {
         this.socket.on("message:in", message => {
             if (message.msg === "connected") {
                 this.status = "connected";
+                if (message.session) {
+                    this.session = message.session;
+                }
                 this.messageQueue.process();
-                this.emit("connected");
+                this.emit("connected", message);
             } else if (message.msg === "ping") {
                 // Reply with a `pong` message to prevent the server from
                 // closing the connection
